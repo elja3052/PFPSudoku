@@ -2,6 +2,16 @@ module Sudoku exposing (main
     , initialModel
     , init
     , matrixToSVG
+    , makeBoard
+    , validList
+    , rowDriver
+    , rowsValid
+    , checkList
+    , columnDriver
+    , columnsValid
+    , squareDriver
+    , squaresValid
+    , sudokuValidation
     )
 
 
@@ -45,9 +55,115 @@ init = (initialModel, Cmd.none)
 
 initialModel : Model
 initialModel =
-  { board = fromList makeBoard,
+  { board = Matrix.fromList makeBoard,
     input = ""
   }
+
+
+--Helper functions
+-----------------------------------------------------------------
+--Comparable list containing 1-9 in ascending order
+compareList : List Int
+compareList =
+    List.range 1 9
+
+--Helper function comparing list of ints to 1-9 ascending
+validList : List Int -> Bool
+validList m =
+        if m == compareList then --compare against [1-9]
+            True
+        else
+            False
+
+--Function to index a List, taken from List.extra library
+getAt : List a -> Int -> Maybe a
+getAt xs idx = List.head <| List.drop idx xs
+
+--Function to check if False is in set of bools
+checkList : List Bool -> Bool
+checkList m =
+    let valid = List.member False m in
+        case valid of
+            True -> False
+            False -> True
+
+-------------------------------------------------------------------
+
+sudokuValidation : Int -> List Bool
+sudokuValidation i =
+    case i of
+        0 -> rowsValid 0 ++ sudokuValidation 1
+        1 -> columnsValid 0 ++ sudokuValidation 2
+        2 -> squaresValid 0 0 ++ sudokuValidation 3
+        _ -> []
+
+--Square validation methods
+--------------------------------------------------------------------------------------------------
+
+squareDriver : Matrix Int -> Int -> Int -> (Int,Int) -> List Int
+squareDriver m i j (x,y) =
+    if j < 3 then
+        if i < 2 then
+            [Maybe.withDefault -1 (get(loc (x+i) (y+j)) m)] ++ squareDriver m (i+1) j (x,y)
+        else
+            [Maybe.withDefault -1 (get(loc (x+i) (y+j)) m)] ++ squareDriver m 0 (j+1) (x,y)
+    else
+        []
+
+squaresValid : Int -> Int -> List Bool
+squaresValid x y =
+    if y < 9 then
+        if x < 6 then
+            [(validList (List.sort (squareDriver (Matrix.fromList makeBoard) 0 0 (y,x))))] ++ squaresValid (x+3) y
+        else
+            [(validList (List.sort (squareDriver (Matrix.fromList makeBoard) 0 0 (y,x))))] ++ squaresValid 0 (y+3)
+    else
+        []
+
+---------------------------------------------------------------------------------------------------
+
+
+--Column validation methods
+---------------------------------------------------------------------------------------------------
+--Helper function to generate list from matrix column j
+columnDriver : Matrix Int -> Int -> Int -> List Int
+columnDriver m i j =
+    if i < 9 then
+        [Maybe.withDefault -1 (get(loc i j) m)] ++ columnDriver m (i+1) j
+    else
+        []
+
+--Driver function to generate list of bools for each column, starting at column j        
+columnsValid : Int -> List Bool
+columnsValid j =
+    if j < 9 then
+        [(validList (List.sort (columnDriver (Matrix.fromList makeBoard) 0 j)))] ++ columnsValid (j+1)
+    else
+        []
+---------------------------------------------------------------------------------------------------
+
+
+
+--Row validation methods
+---------------------------------------------------------------------------------------------------
+
+--Helper function to sort a list (row) at index i from overall list of rows    
+rowDriver : List (List Int) -> Int -> List Int
+rowDriver m i =
+    List.sort (Maybe.withDefault [] (getAt m i))
+
+
+--Driver function to generate list of bools for each row, starting at row i
+rowsValid : Int -> List Bool
+rowsValid i =
+    if i < 9 then
+        [(validList (rowDriver makeBoard i))] ++ rowsValid (i+1)
+    else
+        []
+
+-------------------------------------------------------------------------------------------------------
+
+
 
 matrixToSVG : Matrix Int -> Svg Msg
 matrixToSVG m =
@@ -148,14 +264,14 @@ matrixToSVG m =
 
 makeBoard : List (List Int)
 makeBoard =
-    [[4,3,5,2,6,9,7,8,1],
+    [[4,3,5,2,6,9,7,8,1], 
     [6,8,2,5,7,1,4,9,3],
     [1,9,7,8,3,4,5,6,2],
     [8,2,6,1,9,5,3,4,7],
-    [3,7,4,6,8,2,9,1,5],
+    [3,7,4,6,8,2,9,1,5], 
     [9,5,1,7,4,3,6,2,8],
-    [5,1,9,3,2,6,8,7,4],
-    [2,4,8,9,5,7,1,3,6],
+    [5,1,9,3,2,6,8,7,4], 
+    [2,4,8,9,5,7,1,3,6], 
     [7,6,3,4,1,8,2,5,9]]
 
 subscriptions : Model -> Sub Msg
