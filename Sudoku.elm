@@ -25,10 +25,6 @@ main =
     , update = update
     }
 
-
-type alias Coord = 
-    {x : Float, y : Float}
-
 type alias Model =
   { board : Matrix Tile,
     input : Int,
@@ -42,10 +38,10 @@ type Tile = Blank --Blank tile
     | P Int --Persistant tile, val cannot be changed by user
 
 type Msg = 
-    ValInput String
-    | XInput String
-    | YInput String
-    | UpdateBoard
+    ValInput String -- Tile number from form
+    | XInput String -- x coord from form
+    | YInput String -- y
+    | UpdateBoard   -- Adds user changes to board
     | ValidateBoard
     | Reset
 
@@ -64,6 +60,7 @@ initialModel =
 
 --Helper functions
 -----------------------------------------------------------------
+
 --Comparable list containing 1-9 in ascending order
 compareList : List Int
 compareList =
@@ -89,7 +86,40 @@ checkList m =
             True -> False
             False -> True
 
+toIntegerMatrix : Matrix Tile -> Matrix Int
+toIntegerMatrix m = 
+    Matrix.map tileToInt m
+
+-- used for board validation
+tileToInt : Tile -> Int
+tileToInt t =
+    case t of
+        Blank -> -1
+        T val -> val
+        P val -> val
+
+-- Used for SVG text of numbers on the board
+tileToVal : Tile -> String
+tileToVal t =
+    case t of
+        Blank -> " "
+        T val -> toString val
+        P val -> toString val
+
+-- used to create the matrix from the makeBoard list
+tupleToTile : (Int,Bool) -> Tile
+tupleToTile (val,mutable) =
+    if val == -1 then
+        Blank
+    else
+        if mutable == True then
+            T val
+        else
+            P val
+
+
 -------------------------------------------------------------------
+-- Validation Functions
 
 
 --Overall sudoku solution validation
@@ -167,9 +197,75 @@ rowsValid m i =
         []
 
 -------------------------------------------------------------------------------------------------------
+-- Initial Board
+
+makeBoard : List (List (Int, Bool)) --(value,mutable?), if value is -1, will be blank when displayed
+makeBoard =
+    [[(4,True),(3,True),(5,True),(2,True),(6,True),(9,False),(7,True),(8,True),(1,True)], 
+    [(6,True),(8,True),(-1,True),(5,True),(7,True),(1,True),(-1,True),(9,True),(3,True)],
+    [(1,True),(9,True),(7,True),(8,True),(3,True),(4,True),(5,True),(6,True),(2,True)],
+    [(8,True),(2,True),(6,True),(1,True),(-1,True),(5,True),(3,True),(4,True),(7,True)],
+    [(3,True),(7,True),(4,True),(6,True),(8,True),(2,True),(9,True),(1,True),(5,True)], 
+    [(9,True),(5,True),(1,True),(7,True),(4,True),(3,True),(6,True),(2,True),(8,True)],
+    [(5,True),(1,True),(9,True),(3,True),(2,True),(6,True),(8,True),(7,True),(4,True)], 
+    [(2,True),(4,True),(8,True),(9,True),(5,True),(7,True),(1,True),(-1,True),(6,True)], 
+    [(7,True),(6,True),(3,True),(4,True),(1,True),(8,True),(2,True),(5,True),(9,True)]]
+
+
+-------------------------------------------------------------------------------------------------------
+-- Update functions
+
+
+-- converts string from form input into int
+inputValidate : String -> Int
+inputValidate s =
+    let num = (Result.withDefault 0 (String.toInt s)) in
+        if num < 0 then
+            0
+        else if num > 9 then
+            0
+        else if (isNaN (toFloat num)) then  -- int type does not have isNaN function smh
+            0
+        else
+            num
+
+-- updates board with user input from form
+updateBoard : Matrix Tile -> Int -> Int -> Int -> Matrix Tile
+updateBoard m v y x =
+    if v /= 0 then
+        case (Maybe.withDefault Blank (get (loc (x-1) (y-1)) m)) of
+            Blank -> Matrix.set (loc (x-1) (y-1)) (T v) m
+            T _ -> Matrix.set (loc (x-1) (y-1)) (T v) m
+            P _ -> m
+    else
+        case (Maybe.withDefault Blank (get (loc (x-1) (y-1)) m)) of
+            P _ -> m
+            _ -> Matrix.set (loc (x-1) (y-1)) Blank m
+
+
+-- handles form messages
+update : Msg -> Model -> Model--(Model, Cmd Msg)
+update msg model =
+  case msg of
+    ValInput val ->
+        { model | input = inputValidate val }
+    XInput x ->
+        { model | inputX = inputValidate x }
+    YInput y ->
+        { model | inputY = inputValidate y }
+    UpdateBoard ->
+        let newMatrix = updateBoard model.board model.input model.inputX model.inputY in
+        { model | board = newMatrix }
+    ValidateBoard ->
+        { model | isValid = checkList (sudokuValidation model 0) }
+    Reset ->
+        initialModel
+
+-------------------------------------------------------------------------------------------------------
+-- View Functions
+
 
 --Helper function to traverse matrix and wrap each element in an SVG message
-
 rowsToSvg : Matrix Tile -> Int -> Int -> List (Svg Msg)
 rowsToSvg m x_acc y_acc =
     if x_acc < 9 then
@@ -188,104 +284,13 @@ rowsToSvg m x_acc y_acc =
         []
 
 --Calls rowsToSVG and wraps its return value in an SVG message
-
 matrixToSvg : Model -> Svg Msg
 matrixToSvg model =
     svg
         [] 
         (rowsToSvg model.board 0 0)
 
-
-toIntegerMatrix : Matrix Tile -> Matrix Int
-toIntegerMatrix m = 
-    Matrix.map tileToInt m
-
--- used for board validation
-tileToInt : Tile -> Int
-tileToInt t =
-    case t of
-        Blank -> -1
-        T val -> val
-        P val -> val
-
--- Used for SVG text of numbers on the board
-tileToVal : Tile -> String
-tileToVal t =
-    case t of
-        Blank -> " "
-        T val -> toString val
-        P val -> toString val
-
--- used to create the matrix from the makeBoard list
-tupleToTile : (Int,Bool) -> Tile
-tupleToTile (val,mutable) =
-    if val == -1 then
-        Blank
-    else
-        if mutable == True then
-            T val
-        else
-            P val
-
-
-
-makeBoard : List (List (Int, Bool)) --(value,mutable?), if value is -1, will be blank when displayed
-makeBoard =
-    [[(4,True),(3,True),(5,True),(2,True),(6,True),(9,False),(7,True),(8,True),(1,True)], 
-    [(6,True),(8,True),(-1,True),(5,True),(7,True),(1,True),(-1,True),(9,True),(3,True)],
-    [(1,True),(9,True),(7,True),(8,True),(3,True),(4,True),(5,True),(6,True),(2,True)],
-    [(8,True),(2,True),(6,True),(1,True),(-1,True),(5,True),(3,True),(4,True),(7,True)],
-    [(3,True),(7,True),(4,True),(6,True),(8,True),(2,True),(9,True),(1,True),(5,True)], 
-    [(9,True),(5,True),(1,True),(7,True),(4,True),(3,True),(6,True),(2,True),(8,True)],
-    [(5,True),(1,True),(9,True),(3,True),(2,True),(6,True),(8,True),(7,True),(4,True)], 
-    [(2,True),(4,True),(8,True),(9,True),(5,True),(7,True),(1,True),(-1,True),(6,True)], 
-    [(7,True),(6,True),(3,True),(4,True),(1,True),(8,True),(2,True),(5,True),(9,True)]]
-
-updateBoard : Matrix Tile -> Int -> Int -> Int -> Matrix Tile
-updateBoard m v y x =
-    if v /= 0 then
-        case (Maybe.withDefault Blank (get (loc (x-1) (y-1)) m)) of
-            Blank -> Matrix.set (loc (x-1) (y-1)) (T v) m
-            T _ -> Matrix.set (loc (x-1) (y-1)) (T v) m
-            P _ -> m
-    else
-        case (Maybe.withDefault Blank (get (loc (x-1) (y-1)) m)) of
-            P _ -> m
-            _ -> Matrix.set (loc (x-1) (y-1)) Blank m
-
-{-subscriptions : Model -> Sub Msg
-subscriptions model =
-  Debug.crash "ghello"-}
-
-inputValidate : String -> Int
-inputValidate s =
-    let num = (Result.withDefault 0 (String.toInt s)) in
-        if num < 0 then
-            0
-        else if num > 9 then
-            0
-        else if (isNaN (toFloat num)) then
-            0
-        else
-            num
-
-update : Msg -> Model -> Model--(Model, Cmd Msg)
-update msg model =
-  case msg of
-    ValInput val ->
-        { model | input = inputValidate val }
-    XInput x ->
-        { model | inputX = inputValidate x }
-    YInput y ->
-        { model | inputY = inputValidate y }
-    UpdateBoard ->
-        let newMatrix = updateBoard model.board model.input model.inputX model.inputY in
-        { model | board = newMatrix }
-    ValidateBoard ->
-        { model | isValid = checkList (sudokuValidation model 0) }
-    Reset ->
-        initialModel
-
+-- outputs values from model next to forms
 viewVal : Model -> Html Msg
 viewVal model =
     if model.isValid then
@@ -293,13 +298,15 @@ viewVal model =
     else
         Html.text (String.concat [(toString model.input)," ",(toString model.inputX), " ", (toString model.inputY),"Unsolved"])
 
+
+
 view : Model -> Html Msg
 view model =
   div []
   [
         Html.text "Sudoku",
       svg
-        [ viewBox "-100 -20 200 150", width "1000px", fontFamily "trebuchet" ] (List.append [ rect [ x "0", y "0", width "100", Svg.Attributes.height "100", fill "none", stroke "black" ] [],
+        [ viewBox "-100 -20 205 150", width "1000px", fontFamily "trebuchet" ] (List.append [ rect [ x "0", y "0", width "100", Svg.Attributes.height "100", fill "none", stroke "black" ] [],
             line [ x1 "0", y1 "11.111", x2 "100", y2 "11.111", stroke "black", strokeWidth ".5" ] [],
             line [ x1 "0", y1 "22.222", x2 "100", y2 "22.222", stroke "black", strokeWidth ".5" ] [],
             line [ x1 "0", y1 "33.333", x2 "100", y2 "33.333", stroke "black" ] [], --h quadrant
@@ -342,8 +349,6 @@ view model =
 
 
             --input [ type_ "text", placeholder "what" ] []
-
-
 
 
          ] [(matrixToSvg model)]),
