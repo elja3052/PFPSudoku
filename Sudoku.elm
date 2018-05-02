@@ -13,17 +13,16 @@ import Svg exposing (..)
 import Svg.Attributes exposing (..)
 import Time exposing (..)
 import Html exposing (..)
-import Html.Attributes exposing (placeholder)
+import Html.Attributes exposing (placeholder,size,form)
 import Html.Events exposing (..)
 
 
 main : Program Never Model Msg
 main = 
-  Html.program
-    { init = init
+  Html.beginnerProgram
+    { model = initialModel
     , view = view
     , update = update
-    , subscriptions = subscriptions
     }
 
 
@@ -32,7 +31,10 @@ type alias Coord =
 
 type alias Model =
   { board : Matrix Tile,
-    input : String
+    input : Int,
+    inputX : Int,
+    inputY : Int,
+    isValid : Bool
   }
 
 type Tile = Blank --Blank tile
@@ -40,8 +42,12 @@ type Tile = Blank --Blank tile
     | P Int --Persistant tile, val cannot be changed by user
 
 type Msg = 
-    Tick Time.Time
-    | Input String
+    ValInput String
+    | XInput String
+    | YInput String
+    | UpdateBoard
+    | ValidateBoard
+    | Reset
 
 init : (Model, Cmd Msg)
 init = (initialModel, Cmd.none)
@@ -49,7 +55,10 @@ init = (initialModel, Cmd.none)
 initialModel : Model
 initialModel =
   { board = Matrix.map tupleToTile (Matrix.fromList makeBoard),
-    input = ""
+    input = -1,
+    inputX = -1,
+    inputY = -1,
+    isValid = False
   }
 
 
@@ -159,27 +168,26 @@ rowsValid m i =
 
 -------------------------------------------------------------------------------------------------------
 
+--Helper function to traverse matrix and wrap each element in an SVG message
 
 rowsToSvg : Matrix Tile -> Int -> Int -> List (Svg Msg)
 rowsToSvg m x_acc y_acc =
     if x_acc < 9 then
         let (x_coord, y_coord) = (((toFloat x_acc)*11.11+3.85),((toFloat y_acc)*11+9)) in
-        case Maybe.withDefault Blank (get (loc x_acc y_acc) m) of
+        case Maybe.withDefault Blank (get (loc y_acc x_acc) m) of
             Blank -> (svg [] [ text_ [x (toString x_coord), y (toString y_coord), fontSize "8"] [Svg.text " "] ])::(rowsToSvg m (x_acc+1) (y_acc))
             T val -> (svg [] [ text_ [x (toString x_coord), y (toString y_coord), fontSize "8"] [Svg.text (toString val)] ])::(rowsToSvg m (x_acc+1) (y_acc))
             P val -> (svg [] [ text_ [x (toString x_coord), y (toString y_coord), fontSize "8", fill "blue"] [Svg.text (toString val)] ])::(rowsToSvg m (x_acc+1) (y_acc))
     else if y_acc < 9 then
         let (x_coord, y_coord) = (((toFloat x_acc)*11.11+3.85),((toFloat y_acc)*11+9)) in
-        case Maybe.withDefault Blank (get (loc x_acc y_acc) m) of
+        case Maybe.withDefault Blank (get (loc y_acc x_acc) m) of
             Blank -> (svg [] [ text_ [x (toString x_coord), y (toString y_coord), fontSize "8"] [Svg.text " "] ])::(rowsToSvg m (0) (y_acc+1))
             T val -> (svg [] [ text_ [x (toString x_coord), y (toString y_coord), fontSize "8"] [Svg.text (toString val)] ])::(rowsToSvg m (0) (y_acc+1))
             P val -> (svg [] [ text_ [x (toString x_coord), y (toString y_coord), fontSize "8", fill "blue"] [Svg.text (toString val)] ])::(rowsToSvg m (0) (y_acc+1))
     else
         []
 
-
-
-
+--Calls rowsToSVG and wraps its return value in an SVG message
 
 matrixToSvg : Model -> Svg Msg
 matrixToSvg model =
@@ -187,100 +195,6 @@ matrixToSvg model =
         [] 
         (rowsToSvg model.board 0 0)
 
-{-matrixToSVG : Matrix Tile -> Svg Msg
-matrixToSVG m =
-    svg
-        [] 
-        [ text_ [x "3.8555", y "9.111", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 0 0) m)))],
-        text_ [x "14.966722", y "9.111", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 0 1) m)))],
-        text_ [x "26.07783333", y "9.111", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 0 2) m)))],
-        text_ [x "37.188944", y "9.111", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 0 3) m)))],
-        text_ [x "48.300055", y "9.111", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 0 4) m)))],
-        text_ [x "59.41116", y "9.111", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 0 5) m)))],
-        text_ [x "70.52227", y "9.111", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 0 6) m)))],
-        text_ [x "81.63338", y "9.111", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 0 7) m)))],
-        text_ [x "92.7445", y "9.111", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 0 8) m)))],
-        --END ROW 1
-        text_ [x "3.8555", y "19.5", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 1 0) m)))],
-        text_ [x "14.966722", y "19.5", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 1 1) m)))],
-        text_ [x "26.07783333", y "19.5", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 1 2) m)))],
-        text_ [x "37.188944", y "19.5", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 1 3) m)))],
-        text_ [x "48.300055", y "19.5", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 1 4) m)))],
-        text_ [x "59.41116", y "19.5", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 1 5) m)))],
-        text_ [x "70.52227", y "19.5", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 1 6) m)))],
-        text_ [x "81.63338", y "19.5", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 1 7) m)))],
-        text_ [x "92.7445", y "19.5", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 1 8) m)))],
-        --END ROW 2
-        text_ [x "3.8555", y "30.25", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 2 0) m)))],
-        text_ [x "14.966722", y "30.25", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 2 1) m)))],
-        text_ [x "26.07783333", y "30.25", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 2 2) m)))],
-        text_ [x "37.188944", y "30.25", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 2 3) m)))],
-        text_ [x "48.300055", y "30.25", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 2 4) m)))],
-        text_ [x "59.41116", y "30.25", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 2 5) m)))],
-        text_ [x "70.52227", y "30.25", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 2 6) m)))],
-        text_ [x "81.63338", y "30.25", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 2 7) m)))],
-        text_ [x "92.7445", y "30.25", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 2 8) m)))],
-        --END ROW 3
-        text_ [x "3.8555", y "41.8", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 3 0) m)))],
-        text_ [x "14.966722", y "41.8", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 3 1) m)))],
-        text_ [x "26.07783333", y "41.8", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 3 2) m)))],
-        text_ [x "37.188944", y "41.8", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 3 3) m)))],
-        text_ [x "48.300055", y "41.8", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 3 4) m)))],
-        text_ [x "59.41116", y "41.8", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 3 5) m)))],
-        text_ [x "70.52227", y "41.8", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 3 6) m)))],
-        text_ [x "81.63338", y "41.8", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 3 7) m)))],
-        text_ [x "92.7445", y "41.8", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 3 8) m)))],
-        --END ROW 4
-        text_ [x "3.8555", y "52.9", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 4 0) m)))],
-        text_ [x "14.966722", y "52.9", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 4 1) m)))],
-        text_ [x "26.07783333", y "52.9", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 4 2) m)))],
-        text_ [x "37.188944", y "52.9", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 4 3) m)))],
-        text_ [x "48.300055", y "52.9", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 4 4) m)))],
-        text_ [x "59.41116", y "52.9", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 4 5) m)))],
-        text_ [x "70.52227", y "52.9", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 4 6) m)))],
-        text_ [x "81.63338", y "52.9", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 4 7) m)))],
-        text_ [x "92.7445", y "52.9", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 4 8) m)))],
-         --END ROW 5
-        text_ [x "3.8555", y "64", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 5 0) m)))],
-        text_ [x "14.966722", y "64", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 5 1) m)))],
-        text_ [x "26.07783333", y "64", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 5 2) m)))],
-        text_ [x "37.188944", y "64", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 5 3) m)))],
-        text_ [x "48.300055", y "64", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 5 4) m)))],
-        text_ [x "59.41116", y "64", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 5 5) m)))],
-        text_ [x "70.52227", y "64", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 5 6) m)))],
-        text_ [x "81.63338", y "64", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 5 7) m)))],
-        text_ [x "92.7445", y "64", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 5 8) m)))],
-        --END ROW 6
-        text_ [x "3.8555", y "75.1", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 6 0) m)))],
-        text_ [x "14.966722", y "75.1", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 6 1) m)))],
-        text_ [x "26.07783333", y "75.1", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 6 2) m)))],
-        text_ [x "37.188944", y "75.1", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 6 3) m)))],
-        text_ [x "48.300055", y "75.1", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 6 4) m)))],
-        text_ [x "59.41116", y "75.1", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 6 5) m)))],
-        text_ [x "70.52227", y "75.1", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 6 6) m)))],
-        text_ [x "81.63338", y "75.1", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 6 7) m)))],
-        text_ [x "92.7445", y "75.1", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 6 8) m)))],
-        --END ROW 7
-        text_ [x "3.8555", y "86.2", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 7 0) m)))],
-        text_ [x "14.966722", y "86.2", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 7 1) m)))],
-        text_ [x "26.07783333", y "86.2", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 7 2) m)))],
-        text_ [x "37.188944", y "86.2", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 7 3) m)))],
-        text_ [x "48.300055", y "86.2", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 7 4) m)))],
-        text_ [x "59.41116", y "86.2", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 7 5) m)))],
-        text_ [x "70.52227", y "86.2", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 7 6) m)))],
-        text_ [x "81.63338", y "86.2", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 7 7) m)))],
-        text_ [x "92.7445", y "86.2", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 7 8) m)))],
-        --END ROW 8
-        text_ [x "3.8555", y "97.3", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 8 0) m)))],
-        text_ [x "14.966722", y "97.3", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 8 1) m)))],
-        text_ [x "26.07783333", y "97.3", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 8 2) m)))],
-        text_ [x "37.188944", y "97.3", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 8 3) m)))],
-        text_ [x "48.300055", y "97.3", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 8 4) m)))],
-        text_ [x "59.41116", y "97.3", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 8 5) m)))],
-        text_ [x "70.52227", y "97.3", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 8 6) m)))],
-        text_ [x "81.63338", y "97.3", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 8 7) m)))],
-        text_ [x "92.7445", y "97.3", fontSize "8"] [Svg.text (tileToVal (Maybe.withDefault Blank (get(loc 8 8) m)))]
-        ]-}
 
 toIntegerMatrix : Matrix Tile -> Matrix Int
 toIntegerMatrix m = 
@@ -327,21 +241,65 @@ makeBoard =
     [(2,True),(4,True),(8,True),(9,True),(5,True),(7,True),(1,True),(-1,True),(6,True)], 
     [(7,True),(6,True),(3,True),(4,True),(1,True),(8,True),(2,True),(5,True),(9,True)]]
 
-subscriptions : Model -> Sub Msg
+updateBoard : Matrix Tile -> Int -> Int -> Int -> Matrix Tile
+updateBoard m v y x =
+    if v /= 0 then
+        case (Maybe.withDefault Blank (get (loc (x-1) (y-1)) m)) of
+            Blank -> Matrix.set (loc (x-1) (y-1)) (T v) m
+            T _ -> Matrix.set (loc (x-1) (y-1)) (T v) m
+            P _ -> m
+    else
+        case (Maybe.withDefault Blank (get (loc (x-1) (y-1)) m)) of
+            P _ -> m
+            _ -> Matrix.set (loc (x-1) (y-1)) Blank m
+
+{-subscriptions : Model -> Sub Msg
 subscriptions model =
-  Debug.crash "ghello"
+  Debug.crash "ghello"-}
 
+inputValidate : String -> Int
+inputValidate s =
+    let num = (Result.withDefault 0 (String.toInt s)) in
+        if num < 0 then
+            0
+        else if num > 9 then
+            0
+        else if (isNaN (toFloat num)) then
+            0
+        else
+            num
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> Model--(Model, Cmd Msg)
 update msg model =
-  Debug.crash "nun"
+  case msg of
+    ValInput val ->
+        { model | input = inputValidate val }
+    XInput x ->
+        { model | inputX = inputValidate x }
+    YInput y ->
+        { model | inputY = inputValidate y }
+    UpdateBoard ->
+        let newMatrix = updateBoard model.board model.input model.inputX model.inputY in
+        { model | board = newMatrix }
+    ValidateBoard ->
+        { model | isValid = checkList (sudokuValidation model 0) }
+    Reset ->
+        initialModel
+
+viewVal : Model -> Html Msg
+viewVal model =
+    if model.isValid then
+        Html.text (String.concat [(toString model.input)," ",(toString model.inputX), " ", (toString model.inputY),"Congrats, solution found"])
+    else
+        Html.text (String.concat [(toString model.input)," ",(toString model.inputX), " ", (toString model.inputY),"Unsolved"])
 
 view : Model -> Html Msg
 view model =
   div []
   [
+        Html.text "Sudoku",
       svg
-        [ viewBox "-100 -20 200 200", width "1000px" ] (List.append [ rect [ x "0", y "0", width "100", height "100", fill "none", stroke "black" ] [],
+        [ viewBox "-100 -20 200 150", width "1000px", fontFamily "trebuchet" ] (List.append [ rect [ x "0", y "0", width "100", Svg.Attributes.height "100", fill "none", stroke "black" ] [],
             line [ x1 "0", y1 "11.111", x2 "100", y2 "11.111", stroke "black", strokeWidth ".5" ] [],
             line [ x1 "0", y1 "22.222", x2 "100", y2 "22.222", stroke "black", strokeWidth ".5" ] [],
             line [ x1 "0", y1 "33.333", x2 "100", y2 "33.333", stroke "black" ] [], --h quadrant
@@ -380,7 +338,7 @@ view model =
             text_ [x "-6", y "74", fontSize "6", fill "red"] [Svg.text (toString 7)],
             text_ [x "-6", y "85", fontSize "6", fill "red"] [Svg.text (toString 8)],
             text_ [x "-6", y "96", fontSize "6", fill "red"] [Svg.text (toString 9)]
-            --foreignObject [x "50", y "170", name "input"] [ textarea [width "40", height "40"] [ input [type_ "text", placeholder "heyo"] [] ] ]
+            --foreignObject [x "10", y "110", name "input", fontSize "5", width "2", height "2"] [ input [type_ "text", size 1] [] ]
 
 
             --input [ type_ "text", placeholder "what" ] []
@@ -389,5 +347,12 @@ view model =
 
 
          ] [(matrixToSvg model)]),
-        svg [ viewBox "-100 -100 200 200", width "1000px" ] [ foreignObject [x "0", y "50"] [ Html.text "Hello" ] ]
+        input [ type_ "text", size 1, onInput ValInput ] [],
+        input [ type_ "text", size 1, onInput XInput ] [],
+        input [ type_ "text", size 1, onInput YInput ] [],
+        button [onClick UpdateBoard] [ Html.text "Submit" ],
+        button [onClick ValidateBoard] [ Html.text "Check Board" ],
+        button [onClick Reset] [ Html.text "Restart" ],
+        viewVal model
     ]
+    --input [type_ "text", size 1] []
