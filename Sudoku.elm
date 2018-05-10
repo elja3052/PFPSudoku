@@ -1,26 +1,12 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 
 -- Matthew Menten & Eli Jacobshagen
 -- Principles of Functional Programming - Hammer - CU Boulder S18
 -- 5/9/2018
 
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
 module Sudoku exposing (main
     , initialModel
     , init
     , matrixToSvg
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    , makeBoard
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
-    , makeBoard
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
     , sudokuValidation
     , checkList
     )
@@ -29,8 +15,6 @@ module Sudoku exposing (main
 import Matrix exposing (..)
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
-<<<<<<< HEAD
-<<<<<<< HEAD
 import Html exposing (..)
 import Html.Attributes exposing (placeholder,size,form)
 import Html.Events exposing (..)
@@ -42,19 +26,6 @@ import Random exposing (Generator, Seed)
 import Time
 
 -- beginner program does not need subscriptions function
-=======
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-import Time exposing (..)
-import Html exposing (..)
-import Html.Attributes exposing (placeholder,size,form)
-import Html.Events exposing (..)
-
-
-<<<<<<< HEAD
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
 main : Program Never Model Msg
 main = 
   Html.beginnerProgram
@@ -64,8 +35,6 @@ main =
     }
 
 type alias Model =
-<<<<<<< HEAD
-<<<<<<< HEAD
   { board : Matrix Tile,  -- sudoku board
     input : Int,          -- User input from form
     isValid : Bool,       -- is the board solved or not
@@ -87,37 +56,10 @@ type Msg =
     | Clicked Position
     | ChangeBoard
 
-=======
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-  { board : Matrix Tile,
-    input : Int,
-    inputX : Int,
-    inputY : Int,
-    isValid : Bool
-  }
-
-type Tile = Blank --Blank tile
-    | T Int --Mutable tile
-    | P Int --Persistant tile, val cannot be changed by user
-
-type Msg = 
-    ValInput String -- Tile number from form
-    | XInput String -- x coord from form
-    | YInput String -- y
-    | UpdateBoard   -- Adds user changes to board
-    | ValidateBoard
-    | Reset
-<<<<<<< HEAD
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
 
 init : (Model, Cmd Msg)
 init = (initialModel, Cmd.none)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 -- initializes board from boards file
 initialModel : Model
 initialModel =
@@ -127,20 +69,6 @@ initialModel =
     clickCoord = {x = -1, y = -1},
     seed = (Random.initialSeed 1235453), -- change to time?
     curBoard = 1
-=======
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-initialModel : Model
-initialModel =
-  { board = Matrix.map tupleToTile (Matrix.fromList makeBoard),
-    input = -1,
-    inputX = -1,
-    inputY = -1,
-    isValid = False
-<<<<<<< HEAD
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
   }
 
 
@@ -148,13 +76,7 @@ initialModel =
 -----------------------------------------------------------------
 
 --Comparable list containing 1-9 in ascending order
-<<<<<<< HEAD
-<<<<<<< HEAD
 -- used for board validation
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
 compareList : List Int
 compareList =
     List.range 1 9
@@ -289,37 +211,11 @@ rowsValid m i =
     else
         []
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
--------------------------------------------------------------------------------------------------------
--- Initial Board
-
-makeBoard : List (List (Int, Bool)) --(value,mutable?), if value is -1, will be blank when displayed
-makeBoard =
-    [[(4,True),(3,True),(5,True),(2,True),(6,True),(9,False),(7,True),(8,True),(1,True)], 
-    [(6,True),(8,True),(-1,True),(5,True),(7,True),(1,True),(-1,True),(9,True),(3,True)],
-    [(1,True),(9,True),(7,True),(8,True),(3,True),(4,True),(5,True),(6,True),(2,True)],
-    [(8,True),(2,True),(6,True),(1,True),(-1,True),(5,True),(3,True),(4,True),(7,True)],
-    [(3,True),(7,True),(4,True),(6,True),(8,True),(2,True),(9,True),(1,True),(5,True)], 
-    [(9,True),(5,True),(1,True),(7,True),(4,True),(3,True),(6,True),(2,True),(8,True)],
-    [(5,True),(1,True),(9,True),(3,True),(2,True),(6,True),(8,True),(7,True),(4,True)], 
-    [(2,True),(4,True),(8,True),(9,True),(5,True),(7,True),(1,True),(-1,True),(6,True)], 
-    [(7,True),(6,True),(3,True),(4,True),(1,True),(8,True),(2,True),(5,True),(9,True)]]
-
-<<<<<<< HEAD
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
 
 -------------------------------------------------------------------------------------------------------
 -- Update functions
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 -- checks bounds on click; only updates if within board
 posToCoords : Model -> Position -> Position
 posToCoords model pos =
@@ -356,10 +252,6 @@ yRanges y =
     else if y > 573 && y < 624 then 9
     else -1
 
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
 -- converts string from form input into int
 inputValidate : String -> Int
 inputValidate s =
@@ -369,15 +261,7 @@ inputValidate s =
         else if num > 9 then
             0
         else if (isNaN (toFloat num)) then  -- int type does not have isNaN function smh
-<<<<<<< HEAD
-<<<<<<< HEAD
             0                               -- handles errors from characters like +,- in the form
-=======
-            0
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
-            0
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
         else
             num
 
@@ -395,8 +279,6 @@ updateBoard m v y x =
             _ -> Matrix.set (loc (x-1) (y-1)) Blank m
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 -- ensures new board is not the same as current board
 getNewRand : Model -> (Int,Seed)
 getNewRand model =
@@ -409,41 +291,16 @@ getNewRand model =
 
 -- handles messages from form and buttons
 update : Msg -> Model -> Model
-=======
--- handles form messages
-update : Msg -> Model -> Model--(Model, Cmd Msg)
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
--- handles form messages
-update : Msg -> Model -> Model--(Model, Cmd Msg)
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
 update msg model =
   case msg of
     ValInput val ->
         { model | input = inputValidate val }
-<<<<<<< HEAD
-<<<<<<< HEAD
     UpdateBoard ->
         let newMatrix = updateBoard model.board model.input model.clickCoord.x model.clickCoord.y in
-=======
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-    XInput x ->
-        { model | inputX = inputValidate x }
-    YInput y ->
-        { model | inputY = inputValidate y }
-    UpdateBoard ->
-        let newMatrix = updateBoard model.board model.input model.inputX model.inputY in
-<<<<<<< HEAD
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
         { model | board = newMatrix }
     ValidateBoard ->
         { model | isValid = checkList (sudokuValidation model 0) }
     Reset ->
-<<<<<<< HEAD
-<<<<<<< HEAD
         let bd =
             if model.curBoard == 1 then Boards.easyBoard1
             else if model.curBoard == 2 then Boards.easyBoard2
@@ -493,12 +350,6 @@ mouseEvent event messager =
 mouseClick : (Position -> msg) -> VirtualDom.Property msg
 mouseClick =
     mouseEvent "click"
-=======
-        initialModel
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
-        initialModel
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
 
 -------------------------------------------------------------------------------------------------------
 -- View Functions
@@ -529,41 +380,20 @@ matrixToSvg model =
         [] 
         (rowsToSvg model.board 0 0)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 
 {-   NO LONGER USED IN CURRENT VERSION
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
 -- outputs values from model next to forms
 viewVal : Model -> Html Msg
 viewVal model =
     if model.isValid then
-<<<<<<< HEAD
-<<<<<<< HEAD
         Html.text (String.concat [(toString model.input)," ",(toString model.clickCoord.x), " ", (toString model.clickCoord.y)," Congrats, solution found!"])
     else
         Html.text (String.concat [(toString model.input)," ",(toString model.clickCoord.x), " ", (toString model.clickCoord.y)," Unsolved"])
 -}
-=======
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-        Html.text (String.concat [(toString model.input)," ",(toString model.inputX), " ", (toString model.inputY),"Congrats, solution found"])
-    else
-        Html.text (String.concat [(toString model.input)," ",(toString model.inputX), " ", (toString model.inputY),"Unsolved"])
-
-<<<<<<< HEAD
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
 
 
 view : Model -> Html Msg
 view model =
-<<<<<<< HEAD
-<<<<<<< HEAD
     let (isSolved,tColor) =
         if model.isValid then ("Solved","green")
         else ("Unsolved","red")
@@ -577,18 +407,6 @@ view model =
       svg
         [ viewBox "-100 -30 280 155", width "1350px", fontFamily "impact" ] 
         (List.append [ rect [ x "0", y "0", width "100", Svg.Attributes.height "100", fill "none", stroke "black" ] [],
-=======
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-  div []
-  [
-        Html.text "Sudoku",
-      svg
-        [ viewBox "-100 -20 205 150", width "1000px", fontFamily "trebuchet" ] (List.append [ rect [ x "0", y "0", width "100", Svg.Attributes.height "100", fill "none", stroke "black" ] [],
-<<<<<<< HEAD
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
             line [ x1 "0", y1 "11.111", x2 "100", y2 "11.111", stroke "black", strokeWidth ".5" ] [],
             line [ x1 "0", y1 "22.222", x2 "100", y2 "22.222", stroke "black", strokeWidth ".5" ] [],
             line [ x1 "0", y1 "33.333", x2 "100", y2 "33.333", stroke "black" ] [], --h quadrant
@@ -626,8 +444,6 @@ view model =
             text_ [x "-6", y "63", fontSize "6", fill "red"] [Svg.text (toString 6)],
             text_ [x "-6", y "74", fontSize "6", fill "red"] [Svg.text (toString 7)],
             text_ [x "-6", y "85", fontSize "6", fill "red"] [Svg.text (toString 8)],
-<<<<<<< HEAD
-<<<<<<< HEAD
             text_ [x "-6", y "96", fontSize "6", fill "red"] [Svg.text (toString 9)],
             foreignObject [x "25", y "-20"] [ Html.text "Sudoku" ],
             foreignObject [x "-77", y "40"] [ input [ type_ "text", size 1, onInput ValInput ] [] ],
@@ -642,28 +458,3 @@ view model =
 
          ] [(matrixToSvg model)])
     ]
-=======
-=======
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-            text_ [x "-6", y "96", fontSize "6", fill "red"] [Svg.text (toString 9)]
-            --foreignObject [x "10", y "110", name "input", fontSize "5", width "2", height "2"] [ input [type_ "text", size 1] [] ]
-
-
-            --input [ type_ "text", placeholder "what" ] []
-
-
-         ] [(matrixToSvg model)]),
-        input [ type_ "text", size 1, onInput ValInput ] [],
-        input [ type_ "text", size 1, onInput XInput ] [],
-        input [ type_ "text", size 1, onInput YInput ] [],
-        button [onClick UpdateBoard] [ Html.text "Submit" ],
-        button [onClick ValidateBoard] [ Html.text "Check Board" ],
-        button [onClick Reset] [ Html.text "Restart" ],
-        viewVal model
-    ]
-<<<<<<< HEAD
-    --input [type_ "text", size 1] []
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
-=======
-    --input [type_ "text", size 1] []
->>>>>>> d37b2ac4e6b0b090dd91714298e6cfec8e23ab2a
