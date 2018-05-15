@@ -1,0 +1,9 @@
+The dependencies for the game are elm-matrix, mouse and virtual-dom
+
+To install them use the command:
+
+elm-package install chendrix/elm-matrix
+
+elm-package install elm-lang/virtual-dom
+
+elm-package install elm-lang/mouse
